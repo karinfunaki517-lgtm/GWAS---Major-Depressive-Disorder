@@ -1,0 +1,100 @@
+---
+title: "MDD_GWAS_Analysis"
+author: "Karin Funaki"
+output: "html_document"
+--- 
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(cluster)
+```
+## GWAS Data Preparation
+
+
+```{r}
+data <- read.csv("MDDsymptoms GSEM 2024-02.xlsx - S8 Genetic multiple regre.csv")
+head(data)
+```
+
+Single Models
+
+```{r}
+data_single <- data %>% filter(Model == "Single")
+head(data_single)
+
+#Matrix of standardized genotype slope in the linear regression model in Factor vs. Phenotype 
+data_genotype <- data_single %>% select("Factor", "Phenotype", "STD_Genotype", "fdr") %>% mutate(fdr = as.numeric(fdr), sig_label = case_when(fdr < 0.001 ~ "***", fdr < 0.01 ~ "**", fdr < 0.05 ~ "*", TRUE ~ ""))
+
+ggplot(data_genotype, aes(x = Phenotype, y = Factor, fill = STD_Genotype)) + geom_tile() +  scale_fill_gradient2(low = "blue", mid = "white", high = "red", midpoint = 0, limits = c(-max(data_genotype$STD_Genotype), max(data_genotype$STD_Genotype))) + ggtitle("Heatmap of Standardized Slope of Single Regression Models") + geom_text(aes(label = sig_label))
+
+#For Multiple Regression Models:
+data_multiple <- data %>% filter(Model == "Multiple")
+head(data_single)
+
+#Matrix of standardized genotype slope in the linear regression model in Factor vs. Phenotype 
+data_genotype_multiple <- data_multiple %>% select("Factor", "Phenotype", "STD_Genotype", "fdr") %>% mutate(fdr = as.numeric(fdr), sig_label = case_when(fdr < 0.001 ~ "***", fdr < 0.01 ~ "**", fdr < 0.05 ~ "*", TRUE ~ ""))
+
+ggplot(data_genotype_multiple, aes(x = Phenotype, y = Factor, fill = STD_Genotype)) + geom_tile() +  scale_fill_gradient2(low = "blue", mid = "white", high = "red", midpoint = 0, limits = c(-max(data_genotype_multiple$STD_Genotype), max(data_genotype_multiple$STD_Genotype))) + ggtitle("Heatmap of Standardized Slope of Multile Regression Models") + geom_text(aes(label = sig_label))
+```
+```{r}
+data_genotype_multiple %>% filter(sig_label != "") %>% ggplot(aes(x = Phenotype, y = STD_Genotype, fill = Phenotype)) + geom_col() + facet_wrap(~ Factor, scales = "free_y") + theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+```{r}
+multiple_matrix <- data_multiple %>% select(Phenotype, Factor, STD_Genotype) %>% pivot_wider(names_from = Factor, values_from = STD_Genotype, id_cols = Phenotype) %>% column_to_rownames(var = "Phenotype")
+distance_matrix <- dist(multiple_matrix, method = "euclidean")
+
+
+```
+
+```{r}
+hier_clust_ward <- hclust(distance_matrix, method = "ward.D2")
+plot(hier_clust_ward,main = "Hierarchical Clustering of MDD Phenotypes with Ward Method", labels = rownames(multiple_matrix))
+
+hier_clust_avg <- hclust(distance_matrix, method = "average")
+plot(hier_clust_avg,main = "Hierarchical Clustering of MDD Phenotypes with Average Method", labels = rownames(multiple_matrix))
+```
+I chose the Ward method for 
+
+#Deciding the Number of Clusters
+```{r}
+heights_ward <- hier_clust_ward$height
+plot(seq_along(heights_ward), rev(heights_ward), type = "b", xlab = "Number of Clusters", ylab = "Height", main = "Elbow Plot for the Ward Method")
+
+heights_avg <- hier_clust_avg$height
+plot(seq_along(heights_avg), rev(heights_avg), type = "b", xlab = "Number of Clusters", ylab = "Height", main = "Elbow Plot for the Average Method")
+```
+I chose k=4 since that is where the elbow plots start to become flat.
+
+#Comparing the Ward Method with the Average Method
+```{r}
+clusters_ward <- cutree(hier_clust_ward, k=4)
+clusters_avg <- cutree(hier_clust_avg, k=4)
+
+sil_ward <- silhouette(clusters_ward, distance_matrix)
+avg_sil_ward <- summary(sil_ward)$avg.width
+avg_sil_ward
+
+sil_avg <- silhouette(clusters_avg, distance_matrix)
+avg_sil_avg <- summary(sil_avg)$avg.width
+avg_sil_avg
+```
+The average silhouette widths are the same for both ward and average methods, indicating that the clusters in this data are not sensitive to the linkage criterion. While the clusters are defined properly, there might be some overlap between clusters.
+
+```{r}
+pca <- prcomp(multiple_matrix, scale. = TRUE)
+pca_data <- as.data.frame(pca$x[, 1:2])
+pca_data <- pca_data %>% mutate(Phenotype = rownames(multiple_matrix)) %>% mutate(Cluster = as.factor(clusters_avg))
+
+ggplot(pca_data, aes(x = PC1, y = PC2, color = Cluster, label = Phenotype)) + geom_point() + geom_text(vjust = -0.4) + stat_ellipse(level = 0.95) + labs(title = "PCA Visualization of Phenotype Clusters", xlab = "Principle Component 1", ylab = "Principle Component 2" )
+```
+
+This shows that the first and second clusters are overlap with each other with 95% confidence ellipses while EA and BMI are further away. Affective and psychiatric phenotypes such as Anxiety, PTSD, Bipolar Disorder, Neuroticism, and Major Depression are in the same cluster as the Major Depressive Disorder. Some behavioral and external phenotypes including Chronic Pain, Alcohol Dependence, Smoking, and Sleep are in another cluster that overlaps with the first one. The phenotypes in the two clusters might share or affect the genetic determinant of the Major Depressive Disorder. On the other hand, BMI and educational attainment were not clustered with any other phenotypes in this dataset.
+
+
