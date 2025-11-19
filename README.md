@@ -3,3 +3,4 @@ Which external phenotypes share the strongest genetic correlations with depressi
 
 
 Dataset used: https://figshare.com/articles/dataset/GWAS_summary_statistics_for_major_depressive_disorder_symptoms/22745573
+See the analysis with visualizations: https://karinfunaki517-lgtm.github.io/GWAS---Major-Depressive-Disorder/
