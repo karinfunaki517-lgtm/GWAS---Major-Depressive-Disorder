@@ -21,17 +21,12 @@ Based on the multiple regression model, these phenotypes produced statistically 
 - Community: none
 - Appetite/Weight: BMI, EA, Pain, Smoking
 
-Hierarchical Clustering: A hierarchical clustering with euclidean distance produced four clusters with both ward and average linkage methods and average silhouette width of 0.47 for both methods. Here are the clusters:
-- Cluster 1 – Affective/Psychiatric:
-Anxiety, PTSD, Neuroticism, Bipolar Disorder, Major Depression
-- Cluster 2 – Behavioral/Lifestyle:
-Chronic Pain, Alcohol Dependence, Smoking, Sleep
-- Cluster 3 – BMI:
-Genetically distinct
-- Cluster 4 – Educational Attainment:
-Distinct negative and distinct genetic pattern
+Hierarchical Clustering: A hierarchical clustering with correlation distance produced three clusters with both ward and average linkage methods and average silhouette width of 0.91 for both methods. Here are the clusters:
+- Cluster 1: Anxiety, PTSD, Neuroticism, Bipolar Disorder, Major Depression, Educational Attainment
+- Cluster 2: Chronic Pain, Alcohol Dependence, Sleep
+- Cluster 3: BMI, Smoking
 
 Conclusion: 
-A two-dimensional PCA of the clusters with 95% elipses show that cluster 1 and 2 overlap slightly. The phenotypes in the two clusters might share or affect the genetic determinant of the Major Depressive Disorder. On the other hand, BMI and educational attainment were not clustered with any other phenotypes in this dataset.
+Affective and psychiatric phenotypes such as Anxiety, PTSD, Bipolar Disorder, Neuroticism, and Major Depression are in the same cluster as the Major Depressive Disorder as well as Educational Attainment. Some behavioral and external phenotypes including Chronic Pain, Alcohol Dependence, and Sleep are in another cluster. BMI and Smoking are in their own cluster, separated from other behavioral and external health-related phenotypes.Because I used correlation matrix for hierarchical clustering, the results show that the phenotypes in each cluster share similar patterns of genetic influence on the MDD latent factors, suggesting polygenic structures among them.
 
 See the analysis with visualizations: https://karinfunaki517-lgtm.github.io/GWAS---Major-Depressive-Disorder/
